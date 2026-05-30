@@ -1,83 +1,85 @@
 # Week 2 Write-up
-Tip: To preview this markdown file
-- On Mac, press `Command (⌘) + Shift + V`
-- On Windows/Linux, press `Ctrl + Shift + V`
 
-## INSTRUCTIONS
+## Submission Details
 
-Fill out all of the `TODO`s in this file.
+Name: **张蔚原** \
+SUNet ID: **S202588320** \
+Citations: **Ollama structured outputs docs, FastAPI docs, local repository code**
 
-## SUBMISSION DETAILS
+This assignment took me about **4.5** hours to do.
 
-Name: **TODO** \
-SUNet ID: **TODO** \
-Citations: **TODO**
+## Your Responses
 
-This assignment took me about **TODO** hours to do. 
-
-
-## YOUR RESPONSES
-For each exercise, please include what prompts you used to generate the answer, in addition to the location of the generated response. Make sure to clearly add comments in your code documenting which parts are generated.
+For each exercise, I include the prompt intent and the main local files changed.
 
 ### Exercise 1: Scaffold a New Feature
-Prompt: 
+Prompt:
+```text
+Analyze the existing heuristic extractor in week2/app/services/extract.py and add an
+LLM-backed alternative named extract_action_items_llm(). Use Ollama structured JSON output,
+lazy-load the client so tests can run without an Ollama server, and normalize duplicate items.
 ```
-TODO
-``` 
 
 Generated Code Snippets:
-```
-TODO: List all modified code files with the relevant line numbers.
+```text
+week2/app/services/extract.py:68-114
+week2/app/routers/action_items.py:21-54
+week2/app/schemas.py:1-51
 ```
 
 ### Exercise 2: Add Unit Tests
-Prompt: 
+Prompt:
+```text
+Write unit tests for the new extract_action_items_llm() flow. Mock the Ollama chat call so
+the tests do not require a running local model, and cover both populated and empty outputs.
 ```
-TODO
-``` 
 
 Generated Code Snippets:
-```
-TODO: List all modified code files with the relevant line numbers.
+```text
+week2/tests/test_extract.py:19-34
 ```
 
 ### Exercise 3: Refactor Existing Code for Clarity
-Prompt: 
+Prompt:
+```text
+Refactor the week2 backend for clearer API contracts. Add Pydantic request/response schemas,
+centralize note and action item response shapes, expose a note-list endpoint, and remove
+import-time side effects that break test collection in proxy-heavy environments.
 ```
-TODO
-``` 
 
 Generated/Modified Code Snippets:
+```text
+week2/app/schemas.py:1-51
+week2/app/db.py:47-104
+week2/app/routers/notes.py:12-30
+week2/app/routers/action_items.py:21-54
+week2/app/main.py:1-24
 ```
-TODO: List all modified code files with the relevant line numbers. (We anticipate there may be multiple scattered changes here – just produce as comprehensive of a list as you can.)
-```
-
 
 ### Exercise 4: Use Agentic Mode to Automate a Small Task
-Prompt: 
+Prompt:
+```text
+Use the new backend endpoints to update the raw HTML frontend. Add an "Extract LLM" button
+wired to /action-items/extract-llm and a "List Notes" button wired to GET /notes, while
+keeping the original heuristic extraction flow intact.
 ```
-TODO
-``` 
 
 Generated Code Snippets:
+```text
+week2/frontend/index.html:25-100
+week2/app/routers/notes.py:20-22
+week2/app/routers/action_items.py:37-45
 ```
-TODO: List all modified code files with the relevant line numbers.
-```
-
 
 ### Exercise 5: Generate a README from the Codebase
-Prompt: 
+Prompt:
+```text
+Read the current week2 codebase and generate a concise README covering setup, run commands,
+available endpoints, and the test command. Mention the Ollama prerequisite only for the LLM
+endpoint.
 ```
-TODO
-``` 
 
 Generated Code Snippets:
+```text
+week2/README.md:1-42
 ```
-TODO: List all modified code files with the relevant line numbers.
-```
-
-
-## SUBMISSION INSTRUCTIONS
-1. Hit a `Command (⌘) + F` (or `Ctrl + F`) to find any remaining `TODO`s in this file. If no results are found, congratulations – you've completed all required fields. 
-2. Make sure you have all changes pushed to your remote repository for grading.
-3. Submit via Gradescope. 

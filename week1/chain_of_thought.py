@@ -8,7 +8,12 @@ load_dotenv()
 NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """
+Solve modular arithmetic carefully and reason step by step internally.
+Only expose concise reasoning if needed.
+The last line must be exactly in the format: Answer: <number>
+Double-check the final modulus before responding.
+"""
 
 
 USER_PROMPT = """

@@ -15,7 +15,19 @@ Keep the implementation minimal.
 """
 
 # TODO: Fill this in!
-YOUR_REFLEXION_PROMPT = ""
+YOUR_REFLEXION_PROMPT = """
+You are revising Python code after test failures.
+Output ONLY a single fenced Python code block defining is_valid_password(password: str) -> bool.
+Fix the implementation using the failure report.
+Requirements:
+- minimum length 8
+- at least one lowercase letter
+- at least one uppercase letter
+- at least one digit
+- at least one special character from !@#$%^&*()-_
+- reject whitespace
+Keep the implementation minimal and correct.
+"""
 
 
 # Ground-truth test suite used to evaluate generated code
@@ -96,7 +108,16 @@ def your_build_reflexion_context(prev_code: str, failures: List[str]) -> str:
 
     Return a string that will be sent as the user content alongside the reflexion system prompt.
     """
-    return ""
+    failures_block = "\n".join(f"- {failure}" for failure in failures)
+    return (
+        "The previous implementation failed the test suite.\n\n"
+        "Previous code:\n"
+        f"```python\n{prev_code}\n```\n\n"
+        "Observed failures:\n"
+        f"{failures_block}\n\n"
+        "Revise the function so it satisfies all requirements. "
+        "Return only the corrected fenced Python code block."
+    )
 
 
 def apply_reflexion(

@@ -1,12 +1,18 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import asc, desc, select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..models import ActionItem
-from ..schemas import ActionItemCreate, ActionItemPatch, ActionItemRead
+from ..schemas import (
+    ActionItemBulkComplete,
+    ActionItemCreate,
+    ActionItemPage,
+    ActionItemPatch,
+    ActionItemRead,
+)
 
 router = APIRouter(prefix="/action-items", tags=["action_items"])
 
@@ -34,6 +40,32 @@ def list_items(
     return [ActionItemRead.model_validate(row) for row in rows]
 
 
+@router.get("/page", response_model=ActionItemPage)
+def list_items_page(
+    db: Session = Depends(get_db),
+    completed: Optional[bool] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    sort: str = Query("created_desc"),
+) -> ActionItemPage:
+    stmt = select(ActionItem)
+    if completed is not None:
+        stmt = stmt.where(ActionItem.completed.is_(completed))
+    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    sort_map = {
+        "created_desc": desc(ActionItem.created_at),
+        "description_asc": asc(ActionItem.description),
+    }
+    stmt = stmt.order_by(sort_map.get(sort, desc(ActionItem.created_at)))
+    rows = db.execute(stmt.offset((page - 1) * page_size).limit(page_size)).scalars().all()
+    return ActionItemPage(
+        items=[ActionItemRead.model_validate(row) for row in rows],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
 @router.post("/", response_model=ActionItemRead, status_code=201)
 def create_item(payload: ActionItemCreate, db: Session = Depends(get_db)) -> ActionItemRead:
     item = ActionItem(description=payload.description, completed=False)
@@ -53,6 +85,22 @@ def complete_item(item_id: int, db: Session = Depends(get_db)) -> ActionItemRead
     db.flush()
     db.refresh(item)
     return ActionItemRead.model_validate(item)
+
+
+@router.post("/bulk-complete", response_model=list[ActionItemRead])
+def bulk_complete(payload: ActionItemBulkComplete, db: Session = Depends(get_db)) -> list[ActionItemRead]:
+    items: list[ActionItem] = []
+    for item_id in payload.ids:
+        item = db.get(ActionItem, item_id)
+        if not item:
+            raise HTTPException(status_code=404, detail=f"Action item {item_id} not found")
+        item.completed = True
+        db.add(item)
+        items.append(item)
+    db.flush()
+    for item in items:
+        db.refresh(item)
+    return [ActionItemRead.model_validate(item) for item in items]
 
 
 @router.patch("/{item_id}", response_model=ActionItemRead)

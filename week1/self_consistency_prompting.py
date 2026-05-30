@@ -9,7 +9,14 @@ load_dotenv()
 NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in! Try to get as close to 100% correctness across all runs as possible.
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """
+Solve the word problem by tracking distances on the trip.
+Henry travels 60 miles total.
+First stop is at mile 20.
+Second stop is 15 miles before the end, so it is at mile 45.
+Distance between the stops is 45 - 20 = 25.
+Give the final line exactly as: Answer: 25
+"""
 
 USER_PROMPT = """
 Solve this problem, then give the final answer on the last line as "Answer: <number>".

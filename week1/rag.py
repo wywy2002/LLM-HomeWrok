@@ -37,7 +37,13 @@ QUESTION = (
 
 
 # TODO: Fill this in!
-YOUR_SYSTEM_PROMPT = ""
+YOUR_SYSTEM_PROMPT = """
+You write small, correct Python functions from the provided API documentation only.
+Use only the supplied context.
+Return exactly one fenced Python code block with the function and required imports.
+Use requests.get, the documented /users/{id} endpoint, and the documented X-API-Key header.
+Raise for non-200 responses and return only the user's name string.
+"""
 
 
 # For this simple example
@@ -56,7 +62,7 @@ def YOUR_CONTEXT_PROVIDER(corpus: List[str]) -> List[str]:
 
     For example, return [] to simulate missing context, or [corpus[0]] to include the API docs.
     """
-    return []
+    return corpus[:1]
 
 
 def make_user_prompt(question: str, context_docs: List[str]) -> str:

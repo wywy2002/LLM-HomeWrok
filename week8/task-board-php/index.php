@@ -1,0 +1,102 @@
+<?php
+$dbPath = __DIR__ . DIRECTORY_SEPARATOR . 'tasks.sqlite';
+$db = new SQLite3($dbPath);
+$db->exec('CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  details TEXT NOT NULL DEFAULT "",
+  completed INTEGER NOT NULL DEFAULT 0
+)');
+?>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Task Board PHP</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 840px; margin: 24px auto; padding: 0 16px; }
+      form, li { display: grid; gap: 8px; }
+      ul { list-style: none; padding: 0; }
+      li { border: 1px solid #ddd; padding: 12px; margin: 10px 0; }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      input, textarea, button { padding: 8px; }
+      textarea { min-height: 72px; }
+    </style>
+  </head>
+  <body>
+    <h1>Task Board</h1>
+    <form id="task-form">
+      <input id="title" placeholder="Task title" required />
+      <textarea id="details" placeholder="Details"></textarea>
+      <button type="submit">Add task</button>
+    </form>
+    <ul id="tasks"></ul>
+    <script>
+      const form = document.getElementById('task-form');
+      const list = document.getElementById('tasks');
+
+      async function request(url, options) {
+        const res = await fetch(url, options);
+        if (!res.ok) throw new Error(await res.text());
+        return res.status === 204 ? null : res.json();
+      }
+
+      function renderTask(task) {
+        return `
+          <li>
+            <div class="row">
+              <input type="checkbox" ${task.completed ? 'checked' : ''} data-toggle="${task.id}" />
+              <strong>${task.title}</strong>
+            </div>
+            <div>${task.details || ''}</div>
+            <div class="row">
+              <button data-delete="${task.id}">Delete</button>
+            </div>
+          </li>
+        `;
+      }
+
+      async function loadTasks() {
+        const tasks = await request('api.php');
+        list.innerHTML = tasks.map(renderTask).join('');
+        document.querySelectorAll('[data-toggle]').forEach((input) => {
+          input.addEventListener('change', async (event) => {
+            const id = event.target.getAttribute('data-toggle');
+            const li = event.target.closest('li');
+            const title = li.querySelector('strong').textContent;
+            const details = li.children[1].textContent;
+            await request(`api.php?id=${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, details, completed: event.target.checked }),
+            });
+            loadTasks();
+          });
+        });
+        document.querySelectorAll('[data-delete]').forEach((button) => {
+          button.addEventListener('click', async () => {
+            await request(`api.php?id=${button.getAttribute('data-delete')}`, { method: 'DELETE' });
+            loadTasks();
+          });
+        });
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await request('api.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: document.getElementById('title').value,
+            details: document.getElementById('details').value,
+          }),
+        });
+        form.reset();
+        loadTasks();
+      });
+
+      loadTasks();
+    </script>
+  </body>
+</html>

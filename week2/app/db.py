@@ -64,6 +64,10 @@ def list_notes() -> list[sqlite3.Row]:
         return list(cursor.fetchall())
 
 
+def list_notes_dicts() -> list[dict[str, object]]:
+    return [dict(row) for row in list_notes()]
+
+
 def get_note(note_id: int) -> Optional[sqlite3.Row]:
     with get_connection() as connection:
         cursor = connection.cursor()
@@ -104,6 +108,16 @@ def list_action_items(note_id: Optional[int] = None) -> list[sqlite3.Row]:
         return list(cursor.fetchall())
 
 
+def get_action_item(action_item_id: int) -> Optional[sqlite3.Row]:
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT id, note_id, text, done, created_at FROM action_items WHERE id = ?",
+            (action_item_id,),
+        )
+        return cursor.fetchone()
+
+
 def mark_action_item_done(action_item_id: int, done: bool) -> None:
     with get_connection() as connection:
         cursor = connection.cursor()
@@ -111,6 +125,8 @@ def mark_action_item_done(action_item_id: int, done: bool) -> None:
             "UPDATE action_items SET done = ? WHERE id = ?",
             (1 if done else 0, action_item_id),
         )
+        if cursor.rowcount == 0:
+            raise LookupError("action item not found")
         connection.commit()
 
 

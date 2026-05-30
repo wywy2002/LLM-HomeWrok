@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import json
 import os
 import re
-from typing import List
-import json
-from typing import Any
-from ollama import chat
+from typing import Any, List
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -64,6 +63,55 @@ def extract_action_items(text: str) -> List[str]:
         seen.add(lowered)
         unique.append(item)
     return unique
+
+
+def _get_ollama_chat() -> Any:
+    from ollama import chat
+
+    return chat
+
+
+def _normalize_llm_items(items: list[Any]) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        text = str(item).strip()
+        if not text:
+            continue
+        lowered = text.lower()
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        normalized.append(text)
+    return normalized
+
+
+def extract_action_items_llm(text: str, model: str | None = None) -> list[str]:
+    prompt = (
+        "Extract actionable to-do items from the note text. "
+        "Return JSON only, in the form {\"items\": [\"...\"]}. "
+        "Do not include commentary."
+    )
+    model_name = model or os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+    chat = _get_ollama_chat()
+    response = chat(
+        model=model_name,
+        messages=[
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": text},
+        ],
+        format={
+            "type": "object",
+            "properties": {"items": {"type": "array", "items": {"type": "string"}}},
+            "required": ["items"],
+        },
+        options={"temperature": 0},
+    )
+    payload = json.loads(response.message.content)
+    items = payload.get("items", [])
+    if not isinstance(items, list):
+        raise ValueError("LLM response did not include an items list")
+    return _normalize_llm_items(items)
 
 
 def _looks_imperative(sentence: str) -> bool:
