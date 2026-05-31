@@ -81,3 +81,38 @@ def test_note_pagination_and_sorting_page(client):
     assert data["page"] == 1
     assert data["page_size"] == 2
     assert [item["title"] for item in data["items"]] == ["Alpha", "Bravo"]
+
+
+def test_tag_crud_and_note_relationships(client):
+    note = client.post("/notes/", json={"title": "Tagged", "content": "content"})
+    assert note.status_code == 201, note.text
+    note_id = note.json()["id"]
+
+    created_tag = client.post("/notes/tags/all", json={"name": "release"})
+    assert created_tag.status_code == 201, created_tag.text
+    tag_id = created_tag.json()["id"]
+    assert created_tag.json()["name"] == "release"
+
+    listed_tags = client.get("/notes/tags/all")
+    assert listed_tags.status_code == 200
+    assert listed_tags.json()[0]["name"] == "release"
+
+    attached = client.post(f"/notes/{note_id}/tags", json={"tag_id": tag_id})
+    assert attached.status_code == 200, attached.text
+    assert attached.json()["tags"] == [{"id": tag_id, "name": "release"}]
+    assert attached.json()["id"] == note_id
+
+    detached = client.delete(f"/notes/{note_id}/tags/{tag_id}")
+    assert detached.status_code == 200, detached.text
+    assert detached.json()["tags"] == []
+
+    deleted_tag = client.delete(f"/notes/tags/{tag_id}")
+    assert deleted_tag.status_code == 204
+
+
+def test_tag_endpoints_return_404_for_missing_entities(client):
+    missing_attach = client.post("/notes/999/tags", json={"tag_id": 1})
+    assert missing_attach.status_code == 404
+
+    missing_delete = client.delete("/notes/tags/999")
+    assert missing_delete.status_code == 404

@@ -2,11 +2,20 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import asc, desc, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from ..db import get_db
-from ..models import Note
-from ..schemas import ExtractionResult, NoteCreate, NotePage, NotePatch, NoteRead
+from ..models import Note, Tag
+from ..schemas import (
+    ExtractionResult,
+    NoteCreate,
+    NotePage,
+    NotePatch,
+    NoteRead,
+    NoteTagAttach,
+    TagCreate,
+    TagRead,
+)
 from ..services.extract import extract_action_items, extract_tags
 
 router = APIRouter(prefix="/notes", tags=["notes"])
@@ -20,7 +29,7 @@ def list_notes(
     limit: int = Query(50, le=200),
     sort: str = Query("-created_at", description="Sort by field, prefix with - for desc"),
 ) -> list[NoteRead]:
-    stmt = select(Note)
+    stmt = select(Note).options(selectinload(Note.tags))
     if q:
         stmt = stmt.where((Note.title.contains(q)) | (Note.content.contains(q)))
 
@@ -52,7 +61,7 @@ def search_notes_page(
     sort: str = Query("created_desc"),
     db: Session = Depends(get_db),
 ) -> NotePage:
-    stmt = select(Note)
+    stmt = select(Note).options(selectinload(Note.tags))
     if q:
         stmt = stmt.where((Note.title.contains(q)) | (Note.content.contains(q)))
 
@@ -76,7 +85,7 @@ def search_notes_page(
 
 @router.patch("/{note_id}", response_model=NoteRead)
 def patch_note(note_id: int, payload: NotePatch, db: Session = Depends(get_db)) -> NoteRead:
-    note = db.get(Note, note_id)
+    note = db.execute(select(Note).options(selectinload(Note.tags)).where(Note.id == note_id)).scalar_one_or_none()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
     if payload.title is not None:
@@ -113,7 +122,7 @@ def delete_note(note_id: int, db: Session = Depends(get_db)) -> None:
 
 @router.get("/{note_id}", response_model=NoteRead)
 def get_note(note_id: int, db: Session = Depends(get_db)) -> NoteRead:
-    note = db.get(Note, note_id)
+    note = db.execute(select(Note).options(selectinload(Note.tags)).where(Note.id == note_id)).scalar_one_or_none()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
     return NoteRead.model_validate(note)
@@ -128,3 +137,55 @@ def extract_note(note_id: int, db: Session = Depends(get_db)) -> ExtractionResul
         action_items=extract_action_items(note.content),
         tags=extract_tags(note.content),
     )
+
+
+@router.get("/tags/all", response_model=list[TagRead], tags=["tags"])
+def list_tags(db: Session = Depends(get_db)) -> list[TagRead]:
+    rows = db.execute(select(Tag).order_by(Tag.name.asc())).scalars().all()
+    return [TagRead.model_validate(row) for row in rows]
+
+
+@router.post("/tags/all", response_model=TagRead, status_code=201, tags=["tags"])
+def create_tag(payload: TagCreate, db: Session = Depends(get_db)) -> TagRead:
+    tag = Tag(name=payload.name.lower())
+    db.add(tag)
+    db.flush()
+    db.refresh(tag)
+    return TagRead.model_validate(tag)
+
+
+@router.delete("/tags/{tag_id}", status_code=204, tags=["tags"])
+def delete_tag(tag_id: int, db: Session = Depends(get_db)) -> None:
+    tag = db.get(Tag, tag_id)
+    if not tag:
+        raise HTTPException(status_code=404, detail="Tag not found")
+    db.delete(tag)
+    db.flush()
+
+
+@router.post("/{note_id}/tags", response_model=NoteRead)
+def attach_tag(note_id: int, payload: NoteTagAttach, db: Session = Depends(get_db)) -> NoteRead:
+    note = db.execute(select(Note).options(selectinload(Note.tags)).where(Note.id == note_id)).scalar_one_or_none()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    tag = db.get(Tag, payload.tag_id)
+    if not tag:
+        raise HTTPException(status_code=404, detail="Tag not found")
+    if all(existing.id != tag.id for existing in note.tags):
+        note.tags.append(tag)
+    db.add(note)
+    db.flush()
+    db.refresh(note)
+    return NoteRead.model_validate(note)
+
+
+@router.delete("/{note_id}/tags/{tag_id}", response_model=NoteRead)
+def detach_tag(note_id: int, tag_id: int, db: Session = Depends(get_db)) -> NoteRead:
+    note = db.execute(select(Note).options(selectinload(Note.tags)).where(Note.id == note_id)).scalar_one_or_none()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    note.tags = [tag for tag in note.tags if tag.id != tag_id]
+    db.add(note)
+    db.flush()
+    db.refresh(note)
+    return NoteRead.model_validate(note)
