@@ -30,6 +30,7 @@ def test_replace_and_delete_note(client):
 
     replaced = client.put(f"/notes/{note_id}", json={"title": "Replacement", "content": "second"})
     assert replaced.status_code == 200, replaced.text
+    assert replaced.json()["id"] == note_id
     assert replaced.json()["title"] == "Replacement"
     assert replaced.json()["content"] == "second"
 
