@@ -67,3 +67,17 @@ def test_extract_note_returns_action_items_and_tags(client):
 def test_extract_note_404_for_missing_note(client):
     response = client.post("/notes/999/extract")
     assert response.status_code == 404
+
+
+def test_note_pagination_and_sorting_page(client):
+    client.post("/notes/", json={"title": "Bravo", "content": "second"})
+    client.post("/notes/", json={"title": "Alpha", "content": "first"})
+    client.post("/notes/", json={"title": "Charlie", "content": "third"})
+
+    page = client.get("/notes/search/page", params={"q": "", "page": 1, "page_size": 2, "sort": "title_asc"})
+    assert page.status_code == 200, page.text
+    data = page.json()
+    assert data["total"] >= 3
+    assert data["page"] == 1
+    assert data["page_size"] == 2
+    assert [item["title"] for item in data["items"]] == ["Alpha", "Bravo"]

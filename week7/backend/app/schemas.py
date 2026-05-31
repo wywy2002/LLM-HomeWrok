@@ -28,6 +28,13 @@ class ExtractionResult(BaseModel):
     tags: list[str]
 
 
+class NotePage(BaseModel):
+    items: list[NoteRead]
+    total: int
+    page: int
+    page_size: int
+
+
 class ActionItemCreate(BaseModel):
     description: str = Field(min_length=1, max_length=1000)
 
@@ -47,3 +54,8 @@ class ActionItemPatch(BaseModel):
     completed: bool | None = None
 
 
+class ActionItemPage(BaseModel):
+    items: list[ActionItemRead]
+    total: int
+    page: int
+    page_size: int
