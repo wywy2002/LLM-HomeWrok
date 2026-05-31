@@ -47,3 +47,23 @@ def test_note_validation_rejects_blank_and_oversized_fields(client):
 
     oversized = client.patch("/notes/1", json={"title": "x" * 201})
     assert oversized.status_code == 422
+
+
+def test_extract_note_returns_action_items_and_tags(client):
+    created = client.post(
+        "/notes/",
+        json={"title": "Release prep", "content": "- [ ] Ship release #launch\n- ACTION: update docs #docs"},
+    )
+    assert created.status_code == 201, created.text
+    note_id = created.json()["id"]
+
+    extracted = client.post(f"/notes/{note_id}/extract")
+    assert extracted.status_code == 200, extracted.text
+    data = extracted.json()
+    assert data["action_items"] == ["Ship release #launch", "ACTION: update docs #docs"]
+    assert data["tags"] == ["launch", "docs"]
+
+
+def test_extract_note_404_for_missing_note(client):
+    response = client.post("/notes/999/extract")
+    assert response.status_code == 404

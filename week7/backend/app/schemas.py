@@ -23,6 +23,11 @@ class NotePatch(BaseModel):
     content: str | None = Field(default=None, min_length=1, max_length=5000)
 
 
+class ExtractionResult(BaseModel):
+    action_items: list[str]
+    tags: list[str]
+
+
 class ActionItemCreate(BaseModel):
     description: str = Field(min_length=1, max_length=1000)
 
