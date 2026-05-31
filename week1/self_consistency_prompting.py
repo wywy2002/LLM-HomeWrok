@@ -10,12 +10,12 @@ NUM_RUNS_TIMES = 5
 
 # TODO: Fill this in! Try to get as close to 100% correctness across all runs as possible.
 YOUR_SYSTEM_PROMPT = """
-Solve the word problem by tracking distances on the trip.
-Henry travels 60 miles total.
-First stop is at mile 20.
-Second stop is 15 miles before the end, so it is at mile 45.
-Distance between the stops is 45 - 20 = 25.
-Give the final line exactly as: Answer: 25
+You are a math solver. Solve word problems concisely.
+
+Rules:
+- Think in 2-3 short sentences only.
+- Last line MUST be exactly: Answer: <number>
+- No extra text after the Answer line.
 """
 
 USER_PROMPT = """

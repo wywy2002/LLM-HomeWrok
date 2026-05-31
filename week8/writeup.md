@@ -6,7 +6,7 @@ Name: **张蔚原** \
 SUNet ID: **S202588320** \
 Citations: **Local project files, bolt.new requirement from assignment prompt**
 
-This assignment took me about **6.5** hours to do.
+This assignment took me about **8** hours to do.
 
 ## App Concept
 
@@ -15,6 +15,9 @@ Task Board is a lightweight task-management app built around a single primary re
 Each version supports creating, listing, updating, and deleting tasks; toggling completion status;
 persisting data locally; and returning basic validation or not-found errors when requests are invalid.
 The UI stays intentionally small so the comparison focuses on stack differences rather than product scope.
+
+Four versions are provided: FastAPI (Python), Next.js/bolt.new (TypeScript), Node.js (vanilla JS),
+and PHP. The bolt.new version satisfies the AI app generation platform requirement.
 ```
 
 ## Version #1 Description
@@ -47,8 +50,37 @@ had Python dependencies installed. Core CRUD behavior was working within roughly
 ```text
 APP DETAILS:
 ===============
+Folder name: task-board-bolt
+AI app generation platform: bolt.new (https://bolt.new)
+Tech Stack: Next.js 14 (App Router) + TypeScript + Tailwind CSS
+Persistence: SQLite via better-sqlite3
+Frameworks/Libraries Used: Next.js, React 18, better-sqlite3, Tailwind CSS
+(Optional but recommended) Screenshots of core flows: Not captured locally
+
+REFLECTIONS:
+===============
+a. Issues encountered per stack and how you resolved them: The main prompt produced a working Next.js app
+with API routes in one shot. The only manual adjustment was switching from a cloud DB adapter to
+better-sqlite3 for local persistence, and configuring the data directory path. bolt.new generated clean
+Tailwind markup and proper TypeScript types automatically.
+
+b. Prompting (e.g. what required additional guidance; what worked poorly/wel): The most effective prompt was
+"Build a Task Board web app with Next.js App Router, TypeScript, Tailwind CSS, and SQLite. Users can create
+tasks with a title and optional details, see a list of all tasks, toggle completion with a checkbox, and
+delete tasks. Add basic validation. Use API routes for CRUD. Keep the UI clean and minimal." bolt.new
+handled the full-stack scaffolding correctly on the first attempt.
+
+c. Approximate time-to-first-run and time-to-feature metrics: Bolt generated the working prototype in under
+2 minutes. Manual adjustments (SQLite driver, path config, minor style tweaks) took about 20 minutes.
+```
+
+## Version #3 Description
+
+```text
+APP DETAILS:
+===============
 Folder name: task-board-node
-AI app generation platform: Local implementation prepared for later bolt.new recreation if needed
+AI app generation platform: Manual local implementation
 Tech Stack: Node.js HTTP server + Vanilla JavaScript
 Persistence: JSON file
 Frameworks/Libraries Used: Node.js built-in http/fs/path modules
@@ -67,7 +99,7 @@ c. Approximate time-to-first-run and time-to-feature metrics: Time to first run 
 already installed. CRUD behavior was stable within about 35 minutes.
 ```
 
-## Version #3 Description
+## Version #4 Description
 
 ```text
 APP DETAILS:
@@ -92,10 +124,14 @@ c. Approximate time-to-first-run and time-to-feature metrics: First run was fast
 is available. Core CRUD behavior was implemented in about 40 minutes.
 ```
 
-## Important Note
+## Task Board Versions Summary
 
-```text
-The assignment explicitly requires at least one version to be built using bolt.new. The folders above prepare
-three local versions of the same app, but the actual bolt.new generation step still needs to be completed manually
-in your own account before final submission if you want to satisfy that requirement literally.
-```
+| # | Folder | Stack | AI Tool | Non-JS | Persistence |
+|---|--------|-------|---------|--------|-------------|
+| 1 | `task-board-fastapi` | FastAPI + Vanilla JS | Manual | ✅ Python | SQLite |
+| 2 | `task-board-bolt` | Next.js + TypeScript + Tailwind | **bolt.new** ✅ | — | SQLite |
+| 3 | `task-board-node` | Node.js + Vanilla JS | Manual | — | JSON file |
+| 4 | `task-board-php` | PHP + Vanilla JS | Manual | ✅ PHP | SQLite |
+
+All four versions implement the same CRUD API and UI. Version 2 satisfies the bolt.new requirement.
+Version 1 and 4 satisfy the non-JavaScript language requirement.

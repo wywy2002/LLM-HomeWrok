@@ -18,15 +18,17 @@ Keep the implementation minimal.
 YOUR_REFLEXION_PROMPT = """
 You are revising Python code after test failures.
 Output ONLY a single fenced Python code block defining is_valid_password(password: str) -> bool.
-Fix the implementation using the failure report.
-Requirements:
-- minimum length 8
-- at least one lowercase letter
-- at least one uppercase letter
-- at least one digit
-- at least one special character from !@#$%^&*()-_
-- reject whitespace
-Keep the implementation minimal and correct.
+
+Requirements (check each independently):
+- len(password) >= 8
+- any(c.islower() for c in password)
+- any(c.isupper() for c in password)
+- any(c.isdigit() for c in password)
+- any(c in "!@#$%^&*()-_" for c in password)
+- not any(c.isspace() for c in password)
+
+IMPORTANT: Do NOT use password.isalnum() — it rejects special characters.
+Check each condition separately and return True only when ALL pass.
 """
 
 
