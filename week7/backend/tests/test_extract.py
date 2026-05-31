@@ -13,6 +13,7 @@ def test_extract_action_items():
     assert "TODO: write tests" in items
     assert "ACTION: review PR" in items
     assert "Ship it!" in items
+    assert len(items) == 3
 
 
 def test_extract_action_items_and_tags_from_checkboxes():
