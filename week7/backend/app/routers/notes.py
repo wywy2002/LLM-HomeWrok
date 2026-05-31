@@ -1,12 +1,12 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import asc, desc, select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..models import Note
-from ..schemas import ExtractionResult, NoteCreate, NotePatch, NoteRead
+from ..schemas import ExtractionResult, NoteCreate, NotePage, NotePatch, NoteRead
 from ..services.extract import extract_action_items, extract_tags
 
 router = APIRouter(prefix="/notes", tags=["notes"])
@@ -42,6 +42,36 @@ def create_note(payload: NoteCreate, db: Session = Depends(get_db)) -> NoteRead:
     db.flush()
     db.refresh(note)
     return NoteRead.model_validate(note)
+
+
+@router.get("/search/page", response_model=NotePage)
+def search_notes_page(
+    q: str = "",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    sort: str = Query("created_desc"),
+    db: Session = Depends(get_db),
+) -> NotePage:
+    stmt = select(Note)
+    if q:
+        stmt = stmt.where((Note.title.contains(q)) | (Note.content.contains(q)))
+
+    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    sort_map = {
+        "created_desc": desc(Note.created_at),
+        "title_asc": asc(Note.title),
+    }
+    rows = db.execute(
+        stmt.order_by(sort_map.get(sort, desc(Note.created_at)))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).scalars().all()
+    return NotePage(
+        items=[NoteRead.model_validate(row) for row in rows],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.patch("/{note_id}", response_model=NoteRead)

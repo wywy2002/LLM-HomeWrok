@@ -44,3 +44,26 @@ def test_action_item_validation_rejects_blank_and_oversized_description(client):
 
     oversized = client.patch("/action-items/1", json={"description": "x" * 1001})
     assert oversized.status_code == 422
+
+
+def test_action_item_pagination_sorting_and_filter_page(client):
+    created = []
+    for description in ["bravo", "alpha", "charlie"]:
+        response = client.post("/action-items/", json={"description": description})
+        assert response.status_code == 201, response.text
+        created.append(response.json()["id"])
+
+    completed = client.patch(f"/action-items/{created[1]}", json={"completed": True})
+    assert completed.status_code == 200, completed.text
+
+    page = client.get(
+        "/action-items/page",
+        params={"completed": True, "page": 1, "page_size": 1, "sort": "description_asc"},
+    )
+    assert page.status_code == 200, page.text
+    data = page.json()
+    assert data["total"] == 1
+    assert data["page"] == 1
+    assert data["page_size"] == 1
+    assert len(data["items"]) == 1
+    assert [item["description"] for item in data["items"]] == ["alpha"]

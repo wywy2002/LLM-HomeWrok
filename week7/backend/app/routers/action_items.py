@@ -1,12 +1,12 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import asc, desc, select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..models import ActionItem
-from ..schemas import ActionItemCreate, ActionItemPatch, ActionItemRead
+from ..schemas import ActionItemCreate, ActionItemPage, ActionItemPatch, ActionItemRead
 
 router = APIRouter(prefix="/action-items", tags=["action_items"])
 
@@ -32,6 +32,36 @@ def list_items(
 
     rows = db.execute(stmt.offset(skip).limit(limit)).scalars().all()
     return [ActionItemRead.model_validate(row) for row in rows]
+
+
+@router.get("/page", response_model=ActionItemPage)
+def list_items_page(
+    db: Session = Depends(get_db),
+    completed: Optional[bool] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    sort: str = Query("created_desc"),
+) -> ActionItemPage:
+    stmt = select(ActionItem)
+    if completed is not None:
+        stmt = stmt.where(ActionItem.completed.is_(completed))
+
+    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    sort_map = {
+        "created_desc": desc(ActionItem.created_at),
+        "description_asc": asc(ActionItem.description),
+    }
+    rows = db.execute(
+        stmt.order_by(sort_map.get(sort, desc(ActionItem.created_at)))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).scalars().all()
+    return ActionItemPage(
+        items=[ActionItemRead.model_validate(row) for row in rows],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.post("/", response_model=ActionItemRead, status_code=201)
