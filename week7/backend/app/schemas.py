@@ -8,6 +8,13 @@ class NoteCreate(BaseModel):
     content: str = Field(min_length=1, max_length=5000)
 
 
+class TagRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 class NoteRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -16,6 +23,7 @@ class NoteRead(BaseModel):
     content: str
     created_at: datetime
     updated_at: datetime
+    tags: list[TagRead] = []
 
 
 class NotePatch(BaseModel):
@@ -59,3 +67,11 @@ class ActionItemPage(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class TagCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+
+
+class NoteTagAttach(BaseModel):
+    tag_id: int
